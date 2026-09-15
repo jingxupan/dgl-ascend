@@ -15,6 +15,13 @@
 #include <torch/custom_class.h>
 #include <torch/script.h>
 
+#if defined(__has_include)
+#if __has_include(<torch_npu/csrc/core/npu/NPUStream.h>)
+#include <torch_npu/csrc/core/npu/NPUStream.h>
+#define DGL_SPARSE_HAS_TORCH_NPU_STREAM 1
+#endif
+#endif
+
 namespace dgl {
 namespace sparse {
 
@@ -59,6 +66,9 @@ inline static runtime::NDArray TorchTensorToDGLArray(torch::Tensor tensor) {
   // original tensor is destroyed. CPU and CUDA paths do not need this.
   if (tensor.device().type() == c10::DeviceType::PrivateUse1) {
     tensor = tensor.clone();
+#ifdef DGL_SPARSE_HAS_TORCH_NPU_STREAM
+    c10_npu::npuSynchronizeDevice();
+#endif
   }
   return runtime::DLPackConvert::FromDLPack(at::toDLPack(tensor));
 }

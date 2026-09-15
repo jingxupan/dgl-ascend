@@ -60,6 +60,27 @@ add_library(${LIB_DGL_SPARSE_NAME} SHARED ${SPARSE_SRC} ${SPARSE_HEADERS})
 target_include_directories(
   ${LIB_DGL_SPARSE_NAME} PRIVATE ${SPARSE_DIR} ${SPARSE_HEADERS})
 target_link_libraries(${LIB_DGL_SPARSE_NAME} ${SPARSE_LINKER_LIBS})
+
+execute_process(
+  COMMAND ${PYTHON_INTERP} -c
+    "import os, torch_npu; print(os.path.join(os.path.dirname(torch_npu.__file__), 'include'))"
+  OUTPUT_VARIABLE TORCH_NPU_INCLUDE_DIR
+  RESULT_VARIABLE TORCH_NPU_DETECT_RESULT
+  ERROR_QUIET
+  OUTPUT_STRIP_TRAILING_WHITESPACE)
+if(TORCH_NPU_DETECT_RESULT EQUAL 0 AND EXISTS "${TORCH_NPU_INCLUDE_DIR}")
+  message(STATUS "Found torch_npu include: ${TORCH_NPU_INCLUDE_DIR}")
+  target_include_directories(${LIB_DGL_SPARSE_NAME}
+    PRIVATE "${TORCH_NPU_INCLUDE_DIR}")
+  find_library(TORCH_NPU_LIB torch_npu
+    HINTS "${TORCH_NPU_INCLUDE_DIR}/../lib")
+  if(TORCH_NPU_LIB)
+    target_link_libraries(${LIB_DGL_SPARSE_NAME} "${TORCH_NPU_LIB}")
+    get_filename_component(TORCH_NPU_LIB_DIR "${TORCH_NPU_LIB}" DIRECTORY)
+    set_target_properties(${LIB_DGL_SPARSE_NAME}
+      PROPERTIES BUILD_RPATH "${TORCH_NPU_LIB_DIR}")
+  endif()
+endif()
 target_compile_definitions(${LIB_DGL_SPARSE_NAME} PRIVATE TORCH_VERSION_MAJOR=${TORCH_VERSION_MAJOR})
 target_compile_definitions(${LIB_DGL_SPARSE_NAME} PRIVATE TORCH_VERSION_MINOR=${TORCH_VERSION_MINOR})
 
