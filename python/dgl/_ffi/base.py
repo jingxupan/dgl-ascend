@@ -34,7 +34,7 @@ class DGLError(Exception):
 
 
 # Latch state for the torch_npu <-> DGL Ascend stream bridge.
-_ascend_bridge = {"ok": False}
+_ascend_bridge = {"ok": False, "pid": None}
 
 torch = None
 
@@ -79,8 +79,14 @@ def _bridge_ascend_stream():
             if not torch.npu.is_available():
                 return
             st["ok"] = True
+            st["pid"] = os.getpid()
         except Exception:  # pylint: disable=broad-except
             return
+    if os.getpid() != st["pid"]:
+        # Forked subprocess (e.g. a DataLoader worker): torch_npu cannot be
+        # re-initialized here, and workers only issue CPU-side DGL calls,
+        # so there is no NPU stream to order against.  Skip the barrier.
+        return
     torch.npu.current_stream().synchronize()
 
 

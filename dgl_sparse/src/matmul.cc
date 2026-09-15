@@ -71,7 +71,7 @@ torch::Tensor SpMMNoAutoGrad(
           dgl_ret, {});
     }
   }
-  return ret;
+  return DGLArrayToTorchTensor(dgl_ret);
 }
 
 torch::Tensor SDDMMNoAutoGrad(
@@ -107,7 +107,7 @@ torch::Tensor SDDMMNoAutoGrad(
         op.c_str(), coo, dgl_mat1, dgl_mat2_tr, dgl_ret, 0 /* Lhs target: u */,
         2 /* rhs target: v */);
   }
-  return ret;
+  return DGLArrayToTorchTensor(dgl_ret);
 }
 
 torch::Tensor BroadcastOpNoAutoGrad(
@@ -140,7 +140,7 @@ torch::Tensor BroadcastOpNoAutoGrad(
         op.c_str(), csr, dgl_sparse_val, dgl_dense_mat, dgl_ret,
         1 /* Lhs target: e */, dgl_rhs_target);
   }
-  return ret;
+  return DGLArrayToTorchTensor(dgl_ret);
 }
 
 torch::Tensor BroadcastSubNoAutoGrad(
